@@ -1,7 +1,7 @@
 # AR Mediation Samples
 
 Example AR scenes that use 
-- [AR Foundation 6.0](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@6.0/manual/index.html) 
+- [AR Foundation 5.1](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.1/manual/index.html) 
 - [Niantic ARDK 3](https://lightship.dev/docs/ardk/)
 
 and demonstrate mediation for some AR features. 
@@ -10,11 +10,11 @@ Each medication of feature is used in a minimal sample scene with example code t
 
 ## Which version should I use ?
 
-The `master` branch of this repository uses AR Foundation 6.0 and Niantic ARDK 3 and is compatible with Unity 6 and newer. 
+The `master` branch of this repository uses AR Foundation 5.1 and Niantic ARDK 3 and is compatible with Unity 6 and newer. 
 
-| Unity Version | AR Foundation Version | AR Foundation Version |
+| Unity Version | AR Foundation Version | Niantic ARDkK Version |
 |---------------|-----------------------|-----------------------|
-| Unity 6       | 6                     | 3                     |
+| Unity 2023      | 5.1                 | 3                     |
 
 ## How to use these samples
 
@@ -24,7 +24,7 @@ You can build the AR Mediation Samples project directly to device, which can be 
 
 To build to device, follow the steps below:
 
-1. Install Unity 6 or later and clone this repository.
+1. Install Unity 2023 or later and clone this repository.
 
 2. Open the Unity project at the root of this repository.
 

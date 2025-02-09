@@ -1,15 +1,21 @@
-using System;
+using System.Collections;
+using UnityEngine.UI;
 
 namespace UnityEngine.XR.ARFoundation.Samples
 {
-    [Serializable]
-    public class RequiresMeshing : IBooleanExpression
+    [RequireComponent(typeof(Button))]
+    public class RequiresMeshing : MonoBehaviour
     {
         static bool s_MeshingSupported;
         static bool s_MeshingChecked;
 
-        public bool Evaluate()
+        Button m_Button;
+
+        IEnumerator Start()
         {
+            m_Button = GetComponent<Button>();
+            yield return null;
+
             if (!s_MeshingChecked)
             {
                 s_MeshingChecked = true;
@@ -18,7 +24,8 @@ namespace UnityEngine.XR.ARFoundation.Samples
                     s_MeshingSupported = true;
             }
 
-            return s_MeshingSupported;
+            if (!s_MeshingSupported)
+                ARSceneSelectUI.DisableButton(m_Button);
         }
     }
 }

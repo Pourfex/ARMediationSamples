@@ -1,3 +1,4 @@
+using System.Collections;
 #if UNITY_IOS && !UNITY_EDITOR
 using UnityEngine.XR.ARKit;
 #endif
@@ -18,32 +19,44 @@ namespace UnityEngine.XR.ARFoundation.Samples
         [SerializeField]
         bool m_RequiresCoachingOverlay;
 
-        public override bool Evaluate()
+        protected override IEnumerator Start()
         {
-            if (!base.Evaluate())
-                return false;
+            yield return base.Start();
+
+            if (m_Button.interactable == false)
+                yield break;
 
 #if !UNITY_IOS || UNITY_EDITOR
-            return false;
+            ARSceneSelectUI.DisableButton(m_Button);
+            yield break;
 #endif
 
-#pragma warning disable 0162 // disable unreachable code warning in Editor
 #if UNITY_IOS && !UNITY_EDITOR
+            // disable unreachable code warning in Editor
+#pragma warning disable 0162
             if (m_RequiresWorldMap && !ARKitSessionSubsystem.worldMapSupported)
-                return false;
+            {
+                ARSceneSelectUI.DisableButton(m_Button);
+                yield break;
+            }
 
             if (m_RequiresGeoAnchors && !EnableGeoAnchors.IsSupported)
-                return false;
+            {
+                ARSceneSelectUI.DisableButton(m_Button);
+                yield break;
+            }
 
             if (m_RequiresCollaborativeParticipants && !ARKitSessionSubsystem.supportsCollaboration)
-                return false;
+            {
+                ARSceneSelectUI.DisableButton(m_Button);
+                yield break;
+            }
 
             if (m_RequiresCoachingOverlay && !ARKitSessionSubsystem.coachingOverlaySupported)
-                return false;
-#endif // UNITY_IOS && !UNITY_EDITOR
-
-            return true;
+                ARSceneSelectUI.DisableButton(m_Button);
 #pragma warning restore 0162
+
+#endif
         }
     }
 }

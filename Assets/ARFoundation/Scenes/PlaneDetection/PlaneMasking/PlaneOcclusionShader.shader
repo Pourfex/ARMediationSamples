@@ -48,7 +48,7 @@
                 ZERO_INITIALIZE(v2f, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-                o.vertex = TransformObjectToHClip(v.vertex.xyz);
+                o.vertex = TransformObjectToHClip(v.vertex);
                 return o;
             }
 

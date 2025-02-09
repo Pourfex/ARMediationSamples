@@ -144,7 +144,7 @@ namespace UnityEngine.XR.ARFoundation.Samples
         void OnEnable()
         {
 #if UNITY_IOS && !UNITY_EDITOR
-            var faceManager = FindAnyObjectByType<ARFaceManager>();
+            var faceManager = FindObjectsUtility.FindAnyObjectByType<ARFaceManager>();
             if (faceManager != null)
             {
                 m_ARKitFaceSubsystem = (ARKitFaceSubsystem)faceManager.subsystem;

@@ -12,12 +12,15 @@ namespace UnityEngine.XR.ARFoundation.Samples
         [SerializeField]
         ARSession m_ARSession;
 
-        void Reset() => m_ARSession = FindAnyObjectByType<ARSession>();
+        void Reset()
+        {
+            m_ARSession = FindObjectOfType<ARSession>();
+        }
 
         void Awake()
         {
             if (m_ARSession == null)
-                m_ARSession = FindAnyObjectByType<ARSession>();
+                m_ARSession = FindObjectOfType<ARSession>();
         }
 
         public void RequestSceneCapture()

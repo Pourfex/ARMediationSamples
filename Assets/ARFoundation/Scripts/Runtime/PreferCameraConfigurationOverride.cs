@@ -14,6 +14,6 @@ namespace UnityEngine.XR.ARFoundation.Samples.Runtime
             m_Session.subsystem.configurationChooser = new PreferCameraConfigurationChooser();
         }
 
-        void Reset() => m_Session = FindAnyObjectByType<ARSession>();
+        void Reset() => m_Session = FindObjectOfType<ARSession>();
     }
 }

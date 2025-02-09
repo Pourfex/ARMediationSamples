@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 
@@ -18,13 +19,10 @@ namespace UnityEngine.XR.ARFoundation.Samples
         [SerializeField, Tooltip("The background image of the UI to optionally display for HMD.")]
         GameObject m_CanvasBackground;
 
-        [SerializeField]
-        BoxCollider m_UIBoxCollider;
-        
         [Header("Settings")]
         [SerializeField, Tooltip("The dimensions the canvas well be set to for HMD in world space in meters.")]
         Vector2 m_HMDCanvasDimensionsInMeters = new(1.15f, 0.85f);
-
+        
         [SerializeField, Tooltip("Distance in front of the camera for the UI to be placed in world space."), Range(.3f, 3)]
         float m_DistanceFromCamera = 1.5f;
 
@@ -37,16 +35,6 @@ namespace UnityEngine.XR.ARFoundation.Samples
         [SerializeField, HideInInspector]
         Canvas m_Canvas;
 
-        [SerializeField, HideInInspector]
-        RectTransform m_CanvasRT;
-
-        // The canvas will get set to world space if either of these two are true.
-        // We can't check the canvas directly because it doesn't get set until the frame after start.
-        public bool isWorldSpaceCanvas => m_EnableInEditor || MenuLoader.IsHmdDevice();
-
-        // The dimensions of the canvas in pixels
-        public Vector2 canvasDimensions => m_CanvasRT.sizeDelta;
-
         Vector2 m_HMDCanvasDimensionsScaled;
         const float k_CanvasWorldSpaceScale = 0.001f;
 
@@ -54,29 +42,27 @@ namespace UnityEngine.XR.ARFoundation.Samples
         {
             m_Camera = Camera.main;
             m_Canvas = GetComponent<Canvas>();
-            m_CanvasRT = m_Canvas.GetComponent<RectTransform>();
         }
 
-        async void Start()
+        void Start()
         {
             if (m_Canvas == null)
                 m_Canvas = GetComponent<Canvas>();
 
-            if (!isWorldSpaceCanvas)
+            if (!m_EnableInEditor && !MenuLoader.IsHmdDevice())
                 return;
-            
-            if (m_CanvasRT == null)
-                m_CanvasRT = m_Canvas.GetComponent<RectTransform>();
 
             // Since the canvas is scaled to preserve UI elements size on the canvas,
             // the values that get applied need to be updated by the scale the canvas will be set to
             m_HMDCanvasDimensionsScaled = m_HMDCanvasDimensionsInMeters / k_CanvasWorldSpaceScale;
 
-            // Wait until next frame when the transform values are updated for the UI since
-            // they get updated in the frame some point after Start
-            await Awaitable.NextFrameAsync();
-            SetToWorldSpace();
-            PlaceInFrontOfCamera();
+            StartCoroutine(InitializeNextFrame());
+            IEnumerator InitializeNextFrame()
+            {
+                yield return null;
+                SetToWorldSpace();
+                PlaceInFrontOfCamera();
+            }
         }
 
         void SetToWorldSpace()
@@ -95,7 +81,6 @@ namespace UnityEngine.XR.ARFoundation.Samples
                 m_CanvasBackground.SetActive(m_ShowBackgroundForHMD);
 
             m_Canvas.GetComponent<RectTransform>().sizeDelta = m_HMDCanvasDimensionsScaled;
-            m_UIBoxCollider.size = m_HMDCanvasDimensionsScaled;
         }
 
         void PlaceInFrontOfCamera()

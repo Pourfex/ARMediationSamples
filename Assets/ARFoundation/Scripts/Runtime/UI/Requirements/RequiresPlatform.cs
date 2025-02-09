@@ -1,52 +1,60 @@
-using System;
+using UnityEngine.UI;
 
 namespace UnityEngine.XR.ARFoundation.Samples
 {
-    [Serializable]
-    public class RequiresPlatform : IBooleanExpression
+    [RequireComponent(typeof(Button))]
+    public class RequiresPlatform : MonoBehaviour
     {
         enum Platform { iOS, Android }
+
+        Button m_Button;
 
         [SerializeField]
         Platform m_RequiredPlatform;
 
         [SerializeField]
-        VersionRequirement m_VersionRequirement;
+        bool m_RequiresMinimumVersion;
+
+        [SerializeField]
+        int m_RequiredVersion;
 
         [SerializeField]
         bool m_AllowEditor;
 
-        public bool Evaluate()
+        void Start()
         {
+            m_Button = GetComponent<Button>();
+
 #if !UNITY_IOS
             if (m_RequiredPlatform == Platform.iOS)
-                return false;
+            {
+                ARSceneSelectUI.DisableButton(m_Button);
+                return;
+            }
 
 #elif !UNITY_ANDROID
             if (m_RequiredPlatform == Platform.Android)
-                return false;
+            {
+                ARSceneSelectUI.DisableButton(m_Button);
+                return;
+            }
 #endif
 
             if (Application.isEditor && !m_AllowEditor)
-                return false;
-
+            {
+                ARSceneSelectUI.DisableButton(m_Button);
+                return;
+            }
+            
 #if UNITY_IOS
-            if (m_VersionRequirement.requiresMinimumVersion)
+            if (m_RequiresMinimumVersion)
             {
                 string version = iOS.Device.systemVersion;
                 int major = int.Parse(version.Split(".")[0]);
-                if (major < m_VersionRequirement.minimumVersion)
-                    return false;
+                if (major < m_RequiredVersion)
+                    ARSceneSelectUI.DisableButton(m_Button);
             }
 #endif
-            return true;
-        }
-
-        [Serializable]
-        public struct VersionRequirement
-        {
-            public bool requiresMinimumVersion;
-            public int minimumVersion;
         }
     }
 }

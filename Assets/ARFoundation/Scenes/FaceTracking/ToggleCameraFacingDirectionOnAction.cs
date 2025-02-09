@@ -1,5 +1,4 @@
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
 
 namespace UnityEngine.XR.ARFoundation.Samples
 {
@@ -7,7 +6,7 @@ namespace UnityEngine.XR.ARFoundation.Samples
     {
         [SerializeField]
         [Tooltip("The input action that triggers the camera to change facing directions")]
-        InputActionReferences m_InputActions;
+        InputActionProperty m_InputAction;
 
         [SerializeField]
         [Tooltip("The camera manager that is used to flip the camera facing direction")]
@@ -17,8 +16,8 @@ namespace UnityEngine.XR.ARFoundation.Samples
 
         public InputActionProperty inputAction
         {
-            get => m_InputActions.screenTap;
-            set => m_InputActions.screenTap = value;
+            get => m_InputAction;
+            set => m_InputAction = value;
         }
 
         public ARCameraManager cameraManager
@@ -29,8 +28,8 @@ namespace UnityEngine.XR.ARFoundation.Samples
 
         void OnEnable()
         {
-            if (m_InputActions.screenTap.action != null)
-                m_InputActions.screenTap.action.performed += OnActionPerformed;
+            if (m_InputAction.action != null)
+                m_InputAction.action.performed += OnActionPerformed;
         }
 
         void Awake()
@@ -40,8 +39,8 @@ namespace UnityEngine.XR.ARFoundation.Samples
 
         void OnDisable()
         {
-            if (m_InputActions.screenTap.action != null)
-                m_InputActions.screenTap.action.performed -= OnActionPerformed;
+            if (m_InputAction.action != null)
+                m_InputAction.action.performed -= OnActionPerformed;
         }
 
         void OnActionPerformed(InputAction.CallbackContext context)

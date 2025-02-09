@@ -27,15 +27,15 @@ namespace UnityEngine.XR.ARFoundation.Samples
 
         void OnEnable()
         {
-            GetComponent<ARPlaneManager>().trackablesChanged.AddListener(OnPlaneAdded);
+            GetComponent<ARPlaneManager>().planesChanged += OnPlaneAdded;
         }
 
         void OnDisable()
         {
-            GetComponent<ARPlaneManager>().trackablesChanged.RemoveListener(OnPlaneAdded);
+            GetComponent<ARPlaneManager>().planesChanged -= OnPlaneAdded;
         }
 
-        void OnPlaneAdded(ARTrackablesChangedEventArgs<ARPlane> eventArgs)
+        void OnPlaneAdded(ARPlanesChangedEventArgs eventArgs)
         {
             foreach (var plane in eventArgs.added)
                 DisableIfVertical(plane);

@@ -1,4 +1,5 @@
-﻿using UnityEngine.XR.ARSubsystems;
+﻿using UnityEngine;
+using UnityEngine.XR.ARSubsystems;
 
 namespace UnityEngine.XR.ARFoundation.Samples
 {
@@ -32,7 +33,7 @@ namespace UnityEngine.XR.ARFoundation.Samples
 
         void CreateEyeGameObjectsIfNecessary()
         {
-            var canvas = FindAnyObjectByType<Canvas>();
+            var canvas = FindObjectsUtility.FindAnyObjectByType<Canvas>();
             if (m_Face.fixationPoint != null && canvas != null && m_FixationReticleGameObject == null)
             {
                 m_FixationReticleGameObject = Instantiate(m_GUIFixationReticlePrefab, canvas.transform);
@@ -47,7 +48,7 @@ namespace UnityEngine.XR.ARFoundation.Samples
 
         void OnEnable()
         {
-            var faceManager = FindAnyObjectByType<ARFaceManager>();
+            var faceManager = FindObjectsUtility.FindAnyObjectByType<ARFaceManager>();
             if (faceManager != null && faceManager.subsystem != null && faceManager.descriptor.supportsEyeTracking)
             {
                 SetVisible((m_Face.trackingState == TrackingState.Tracking) && (ARSession.state > ARSessionState.Ready));

@@ -1,6 +1,5 @@
-using System;
 using System.Collections.Generic;
-using UnityEngine.XR.ARSubsystems;
+using Unity.XR.CoreUtils;
 
 namespace UnityEngine.XR.ARFoundation.Samples
 {
@@ -11,10 +10,14 @@ namespace UnityEngine.XR.ARFoundation.Samples
         ARAnchorManager m_AnchorManager;
 
         [SerializeField]
+        [Tooltip("The prefab to be instantiated for each anchor.")]
+        GameObject m_Prefab;
+
+        [SerializeField]
         [Tooltip("The Scriptable Object Asset that contains the ARRaycastHit event.")]
         ARRaycastHitEventAsset m_RaycastHitEvent;
 
-        Dictionary<TrackableId, ARAnchor> m_AnchorsByTrackableId = new();
+        List<ARAnchor> m_Anchors = new();
 
         public ARAnchorManager anchorManager
         {
@@ -22,25 +25,40 @@ namespace UnityEngine.XR.ARFoundation.Samples
             set => m_AnchorManager = value;
         }
 
+        public GameObject prefab
+        {
+            get => m_Prefab;
+            set => m_Prefab = value;
+        }
+
         public void RemoveAllAnchors()
         {
-            foreach (var anchor in m_AnchorsByTrackableId.Values)
+            foreach (var anchor in m_Anchors)
             {
-                m_AnchorManager.TryRemoveAnchor(anchor);
+                Destroy(anchor.gameObject);
             }
-            m_AnchorsByTrackableId.Clear();
+            m_Anchors.Clear();
         }
 
         // Runs when the reset option is called in the context menu in-editor, or when first created.
         void Reset()
         {
-            m_AnchorManager = FindAnyObjectByType<ARAnchorManager>();
+            if (m_AnchorManager == null)
+#if UNITY_2023_1_OR_NEWER
+                m_AnchorManager = FindAnyObjectByType<ARAnchorManager>();
+#else
+                m_AnchorManager = FindObjectOfType<ARAnchorManager>();
+#endif
         }
 
         void OnEnable()
         {
             if (m_AnchorManager == null)
+#if UNITY_2023_1_OR_NEWER
                 m_AnchorManager = FindAnyObjectByType<ARAnchorManager>();
+#else
+                m_AnchorManager = FindObjectOfType<ARAnchorManager>();
+#endif
 
             if ((m_AnchorManager ? m_AnchorManager.subsystem : null) == null)
             {
@@ -57,74 +75,62 @@ namespace UnityEngine.XR.ARFoundation.Samples
             }
 
             m_RaycastHitEvent.eventRaised += CreateAnchor;
-            m_AnchorManager.trackablesChanged.AddListener(OnAnchorsChanged);
-        }
-
-        void OnAnchorsChanged(ARTrackablesChangedEventArgs<ARAnchor> eventArgs)
-        {
-            // add any anchors that have been added outside our control, such as loading from storage
-            foreach (var addedAnchor in eventArgs.added)
-            {
-                m_AnchorsByTrackableId.Add(addedAnchor.trackableId, addedAnchor);
-            }
-
-            // remove any anchors that have been removed outside our control, such as during a session reset
-            foreach (var removedAnchor in eventArgs.removed)
-            {
-                if (removedAnchor.Value != null)
-                {
-                    m_AnchorsByTrackableId.Remove(removedAnchor.Key);
-                    Destroy(removedAnchor.Value.gameObject);
-                }
-            }
         }
 
         void OnDisable()
         {
             if (m_RaycastHitEvent != null)
                 m_RaycastHitEvent.eventRaised -= CreateAnchor;
-
-            if (m_AnchorManager != null)
-                m_AnchorManager.trackablesChanged.AddListener(OnAnchorsChanged);
         }
 
-        /// <summary>
-        /// Attempts to attach a new anchor to a hit `ARPlane` if supported.
-        /// Otherwise, asynchronously creates a new anchor.
-        /// </summary>
-        void CreateAnchor(object sender, ARRaycastHit hit)
+        void CreateAnchor(object sender, ARRaycastHit arRaycastHit)
         {
-            if (m_AnchorManager.descriptor.supportsTrackableAttachments && hit.trackable is ARPlane plane)
+            ARAnchor anchor;
+
+            // If we hit a plane, try to "attach" the anchor to the plane
+            if (m_AnchorManager.descriptor.supportsTrackableAttachments && arRaycastHit.trackable is ARPlane plane)
             {
-                AttachAnchorToTrackable(plane, hit);
+                if (m_Prefab != null)
+                {
+                    var oldPrefab = m_AnchorManager.anchorPrefab;
+                    m_AnchorManager.anchorPrefab = m_Prefab;
+                    anchor = m_AnchorManager.AttachAnchor(plane, arRaycastHit.pose);
+                    m_AnchorManager.anchorPrefab = oldPrefab;
+                }
+                else
+                {
+                    anchor = m_AnchorManager.AttachAnchor(plane, arRaycastHit.pose);
+                }
+
+                FinalizePlacedAnchor(anchor, $"Attached to plane {plane.trackableId}");
+                return;
+            }
+
+            // Otherwise, just create a regular anchor at the hit pose
+            if (m_Prefab != null)
+            {
+                // Note: the anchor can be anywhere in the scene hierarchy
+                var anchorPrefab = Instantiate(m_Prefab, arRaycastHit.pose.position, arRaycastHit.pose.rotation);
+                anchor = ComponentUtils.GetOrAddIf<ARAnchor>(anchorPrefab, true);
             }
             else
             {
-                CreateAnchorAsync(hit);
+                var anchorPrefab = new GameObject("Anchor");
+                anchorPrefab.transform.SetPositionAndRotation(arRaycastHit.pose.position, arRaycastHit.pose.rotation);
+                anchor = anchorPrefab.AddComponent<ARAnchor>();
             }
+
+            FinalizePlacedAnchor(anchor, $"Anchor (from {arRaycastHit.hitType})");
         }
 
-        void AttachAnchorToTrackable(ARPlane plane, ARRaycastHit hit)
+        void FinalizePlacedAnchor(ARAnchor anchor, string text)
         {
-            var anchor = m_AnchorManager.AttachAnchor(plane, hit.pose);
-            var arAnchorDebugVisualizer = anchor.GetComponent<ARAnchorDebugVisualizer>();
-            if (arAnchorDebugVisualizer != null)
+            var canvasTextManager = anchor.GetComponent<CanvasTextManager>();
+            if (canvasTextManager != null)
             {
-                arAnchorDebugVisualizer.IsAnchorAttachedToTrackable = true;
-                arAnchorDebugVisualizer.SetAnchorCreationMethod(true, hit.hitType);
+                canvasTextManager.text = text;
             }
-        }
-
-        async void CreateAnchorAsync(ARRaycastHit hit)
-        {
-            var result = await m_AnchorManager.TryAddAnchorAsync(hit.pose);
-            if (result.status.IsSuccess())
-            {
-                var anchor = result.value;
-                var arAnchorDebugVisualizer = anchor.GetComponent<ARAnchorDebugVisualizer>();
-                if (arAnchorDebugVisualizer != null)
-                    arAnchorDebugVisualizer.SetAnchorCreationMethod(true, hit.hitType);
-            }
+            m_Anchors.Add(anchor);
         }
     }
 }

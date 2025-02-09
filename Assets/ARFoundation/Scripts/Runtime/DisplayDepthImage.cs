@@ -199,10 +199,10 @@ namespace UnityEngine.XR.ARFoundation.Samples
 
         void OnDisable()
         {
-            // Unsubscribe from the camera frame received event, and initialize the display rotation matrix.
+            // Unsubscribe to the camera frame received event, and initialize the display rotation matrix.
+            Debug.Assert(m_CameraManager != null, "no camera manager");
+            m_CameraManager.frameReceived -= OnCameraFrameEventReceived;
             m_DisplayRotationMatrix = Matrix4x4.identity;
-            if (m_CameraManager != null)
-                m_CameraManager.frameReceived -= OnCameraFrameEventReceived;
         }
 
         void Update()
@@ -333,14 +333,25 @@ namespace UnityEngine.XR.ARFoundation.Samples
                 // Copy the display rotation matrix from the camera.
                 Matrix4x4 cameraMatrix = cameraFrameEventArgs.displayMatrix ?? Matrix4x4.identity;
 
+                Vector2 affineBasisX = new Vector2(1.0f, 0.0f);
+                Vector2 affineBasisY = new Vector2(0.0f, 1.0f);
+                Vector2 affineTranslation = new Vector2(0.0f, 0.0f);
+#if UNITY_IOS
+                affineBasisX = new Vector2(cameraMatrix[0, 0], cameraMatrix[1, 0]);
+                affineBasisY = new Vector2(cameraMatrix[0, 1], cameraMatrix[1, 1]);
+                affineTranslation = new Vector2(cameraMatrix[2, 0], cameraMatrix[2, 1]);
+#endif // UNITY_IOS
+#if UNITY_ANDROID
+                affineBasisX = new Vector2(cameraMatrix[0, 0], cameraMatrix[0, 1]);
+                affineBasisY = new Vector2(cameraMatrix[1, 0], cameraMatrix[1, 1]);
+                affineTranslation = new Vector2(cameraMatrix[0, 2], cameraMatrix[1, 2]);
+#endif // UNITY_ANDROID
+
                 // The camera display matrix includes scaling and offsets to fit the aspect ratio of the device. In most
                 // cases, the camera display matrix should be used directly without modification when applying depth to
                 // the scene because that will line up the depth image with the camera image. However, for this demo,
                 // we want to show the full depth image as a picture-in-picture, so we remove these scaling and offset
                 // factors while preserving the orientation.
-                Vector2 affineBasisX = new Vector2(cameraMatrix[0, 0], cameraMatrix[1, 0]);
-                Vector2 affineBasisY = new Vector2(cameraMatrix[0, 1], cameraMatrix[1, 1]);
-                Vector2 affineTranslation = new Vector2(cameraMatrix[2, 0], cameraMatrix[2, 1]);
                 affineBasisX = affineBasisX.normalized;
                 affineBasisY = affineBasisY.normalized;
                 m_DisplayRotationMatrix = Matrix4x4.identity;
@@ -350,6 +361,10 @@ namespace UnityEngine.XR.ARFoundation.Samples
                 m_DisplayRotationMatrix[1,1] = affineBasisY.y;
                 m_DisplayRotationMatrix[2,0] = Mathf.Round(affineTranslation.x);
                 m_DisplayRotationMatrix[2,1] = Mathf.Round(affineTranslation.y);
+
+#if UNITY_ANDROID
+                m_DisplayRotationMatrix = k_AndroidFlipYMatrix * m_DisplayRotationMatrix;
+#endif // UNITY_ANDROID
 
                 // Set the matrix to the raw image material.
                 m_RawImage.material.SetMatrix(k_DisplayRotationPerFrameId, m_DisplayRotationMatrix);
@@ -405,10 +420,6 @@ namespace UnityEngine.XR.ARFoundation.Samples
             // and keeping a minimum dimension size.
             float minDimension = 480.0f;
             float maxDimension = Mathf.Round(minDimension * m_TextureAspectRatio);
-            if (minDimension > maxDimension)
-            {
-                (minDimension, maxDimension) = (maxDimension, minDimension);
-            }
             Vector2 rectSize;
             switch (m_CurrentScreenOrientation)
             {

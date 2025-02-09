@@ -1,4 +1,5 @@
-﻿using UnityEngine.UI;
+﻿using System;
+using UnityEngine.UI;
 
 namespace UnityEngine.XR.ARFoundation.Samples
 {
@@ -17,8 +18,8 @@ namespace UnityEngine.XR.ARFoundation.Samples
         /// </summary>
         public Text ambientIntensityText
         {
-            get => m_AmbientIntensityText;
-            set => m_AmbientIntensityText = ambientIntensityText;
+            get { return m_AmbientIntensityText; }
+            set { m_AmbientIntensityText = ambientIntensityText; }
         }
 
         [Tooltip("The UI Text element used to display the estimated ambient color in the physical environment.")]
@@ -30,8 +31,8 @@ namespace UnityEngine.XR.ARFoundation.Samples
         /// </summary>
         public Text ambientColorText
         {
-            get => m_AmbientColorText;
-            set => m_AmbientColorText = value;
+            get { return m_AmbientColorText; }
+            set { m_AmbientColorText = value; }
         }
 
         void Awake()

@@ -1,6 +1,4 @@
-﻿// This shader only works with convex polygon meshes where the second set of uv coordinates
-// scales from 0 - 1, with 0 being the center of the mesh, and 1 being the edge of the mesh.
-Shader "Unlit/FeatheredPlaneShader"
+﻿Shader "Unlit/FeatheredPlaneShader"
 {
     Properties
     {

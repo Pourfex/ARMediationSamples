@@ -41,12 +41,12 @@ public class SwitchPointCloudVisualizationMode : MonoBehaviour
     void OnEnable()
     {
         SetMode(m_Mode);
-        GetComponent<ARPointCloudManager>().trackablesChanged.AddListener(OnPointCloudsChanged);
+        GetComponent<ARPointCloudManager>().pointCloudsChanged += OnPointCloudsChanged;
     }
 
     StringBuilder m_StringBuilder = new StringBuilder();
 
-    void OnPointCloudsChanged(ARTrackablesChangedEventArgs<ARPointCloud> eventArgs)
+    void OnPointCloudsChanged(ARPointCloudChangedEventArgs eventArgs)
     {
         m_StringBuilder.Clear();
         foreach (var pointCloud in eventArgs.updated)

@@ -39,16 +39,16 @@ namespace UnityEngine.XR.ARFoundation.Samples
         void OnEnable()
         {
             Debug.Assert(m_HumanBodyManager != null, "Human body manager is required.");
-            m_HumanBodyManager.trackablesChanged.AddListener(OnHumanBodiesChanged);
+            m_HumanBodyManager.humanBodiesChanged += OnHumanBodiesChanged;
         }
 
         void OnDisable()
         {
             if (m_HumanBodyManager != null)
-                m_HumanBodyManager.trackablesChanged.RemoveListener(OnHumanBodiesChanged);
+                m_HumanBodyManager.humanBodiesChanged -= OnHumanBodiesChanged;
         }
 
-        void OnHumanBodiesChanged(ARTrackablesChangedEventArgs<ARHumanBody> eventArgs)
+        void OnHumanBodiesChanged(ARHumanBodiesChangedEventArgs eventArgs)
         {
             BoneController boneController;
 
@@ -74,13 +74,13 @@ namespace UnityEngine.XR.ARFoundation.Samples
                 }
             }
 
-            foreach (var (trackableId, _) in eventArgs.removed)
+            foreach (var humanBody in eventArgs.removed)
             {
-                Debug.Log($"Removing a skeleton [{trackableId}].");
-                if (m_SkeletonTracker.TryGetValue(trackableId, out boneController))
+                Debug.Log($"Removing a skeleton [{humanBody.trackableId}].");
+                if (m_SkeletonTracker.TryGetValue(humanBody.trackableId, out boneController))
                 {
                     Destroy(boneController.gameObject);
-                    m_SkeletonTracker.Remove(trackableId);
+                    m_SkeletonTracker.Remove(humanBody.trackableId);
                 }
             }
         }

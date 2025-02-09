@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine.XR.ARSubsystems;
 
 namespace UnityEngine.XR.ARFoundation.Samples
@@ -7,15 +8,15 @@ namespace UnityEngine.XR.ARFoundation.Samples
         [SerializeField]
         bool m_RequiresEyeTracking;
 
-        public override bool Evaluate()
+        protected override IEnumerator Start()
         {
-            if (!base.Evaluate())
-                return false;
+            yield return base.Start();
+
+            if (m_Button.interactable == false)
+                yield break;
 
             if (m_RequiresEyeTracking && !s_LoadedSubsystem.subsystemDescriptor.supportsEyeTracking)
-                return false;
-
-            return true;
+                ARSceneSelectUI.DisableButton(m_Button);
         }
     }
 }

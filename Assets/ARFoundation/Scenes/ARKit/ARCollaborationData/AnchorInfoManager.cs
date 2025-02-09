@@ -1,4 +1,8 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.XR.ARFoundation;
 using Unity.XR.CoreUtils;
 
 namespace UnityEngine.XR.ARFoundation.Samples
@@ -24,15 +28,15 @@ namespace UnityEngine.XR.ARFoundation.Samples
 
         void OnEnable()
         {
-            GetComponent<ARAnchorManager>().trackablesChanged.AddListener(OnAnchorsChanged);
+            GetComponent<ARAnchorManager>().anchorsChanged += OnAnchorsChanged;
         }
 
         void OnDisable()
         {
-            GetComponent<ARAnchorManager>().trackablesChanged.RemoveListener(OnAnchorsChanged);
+            GetComponent<ARAnchorManager>().anchorsChanged -= OnAnchorsChanged;
         }
 
-        void OnAnchorsChanged(ARTrackablesChangedEventArgs<ARAnchor> eventArgs)
+        void OnAnchorsChanged(ARAnchorsChangedEventArgs eventArgs)
         {
             foreach (var anchor in eventArgs.added)
             {
@@ -45,12 +49,34 @@ namespace UnityEngine.XR.ARFoundation.Samples
             }
         }
 
+        unsafe struct byte128
+        {
+            public fixed byte data[16];
+        }
+
         void UpdateAnchor(ARAnchor anchor)
         {
-            var arAnchorDebugVisualizer = anchor.GetComponent<ARAnchorDebugVisualizer>();
-            if (arAnchorDebugVisualizer != null)
+            var sessionId = anchor.sessionId;
+
+            var textManager = anchor.GetComponent<CanvasTextManager>();
+            if (textManager)
             {
-                arAnchorDebugVisualizer.CurrentSubsystemSessionId = session.subsystem.sessionId;
+                textManager.text = sessionId.Equals(session.subsystem.sessionId) ? "Local" : "Remote";
+            }
+
+            var colorizer = anchor.GetComponent<Colorizer>();
+            if (colorizer)
+            {
+                // Generate a color from the sessionId
+                unsafe
+                {
+                    var bytes = *(byte128*)&sessionId;
+                    colorizer.color = new Color(
+                        bytes.data[0] / 255f,
+                        bytes.data[4] / 255f,
+                        bytes.data[8] / 255f,
+                        bytes.data[12] / 255f);
+                }
             }
         }
     }
