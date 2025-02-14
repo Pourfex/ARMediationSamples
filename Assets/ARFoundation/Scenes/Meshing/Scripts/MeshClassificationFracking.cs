@@ -15,6 +15,23 @@ namespace UnityEngine.XR.ARFoundation.Samples
 {
     public class MeshClassificationFracking : MonoBehaviour
     {
+
+        public List<Texture> textures = new List<Texture>();
+        public List<Renderer> renderers = new List<Renderer>();
+        
+        public void SetColor(int indexColor)
+        {
+            Debug.Log("SetColor");
+            m_SeatTexture = textures[indexColor];
+            foreach (Renderer renderer in renderers)
+            {
+                Material seatMaterial = new Material(Shader.Find("Standard"));
+                seatMaterial.mainTexture = m_SeatTexture;
+                renderer.material = seatMaterial;
+            }
+        }
+        public Texture m_SeatTexture; // Assigner cette texture depuis l'Inspector
+
         /// <summary>
         /// The number of mesh classifications detected.
         /// </summary>
@@ -218,57 +235,81 @@ namespace UnityEngine.XR.ARFoundation.Samples
         /// classification.
         /// </summary>
         /// <param name="meshFilter">The mesh filter for the base mesh with multiple face classifications.</param>
-        void BreakupMesh(MeshFilter meshFilter)
+      void BreakupMesh(MeshFilter meshFilter)
+{
+    XRMeshSubsystem meshSubsystem = m_MeshManager.subsystem as XRMeshSubsystem;
+    if (meshSubsystem == null)
+    {
+        return;
+    }
+
+    var meshId = ExtractTrackableId(meshFilter.name);
+    var faceClassifications = meshSubsystem.GetFaceClassifications(meshId, Allocator.Persistent);
+
+    if (!faceClassifications.IsCreated)
+    {
+        return;
+    }
+
+    using (faceClassifications)
+    {
+        if (faceClassifications.Length <= 0)
         {
-            XRMeshSubsystem meshSubsystem = m_MeshManager.subsystem as XRMeshSubsystem;
-            if (meshSubsystem == null)
-            {
-                return;
-            }
+            return;
+        }
 
-            var meshId = ExtractTrackableId(meshFilter.name);
-            var faceClassifications = meshSubsystem.GetFaceClassifications(meshId, Allocator.Persistent);
+        var parent = meshFilter.transform.parent;
 
-            if (!faceClassifications.IsCreated)
-            {
-                return;
-            }
+        MeshFilter[] meshFilters = new MeshFilter[k_NumClassifications];
 
-            using (faceClassifications)
+        meshFilters[(int)ARMeshClassification.None] = (m_NoneMeshPrefab == null) ? null : Instantiate(m_NoneMeshPrefab, parent);
+        meshFilters[(int)ARMeshClassification.Wall] = (m_WallMeshPrefab == null) ? null : Instantiate(m_WallMeshPrefab, parent);
+        meshFilters[(int)ARMeshClassification.Floor] = (m_FloorMeshPrefab == null) ? null : Instantiate(m_FloorMeshPrefab, parent);
+        meshFilters[(int)ARMeshClassification.Ceiling] = (m_CeilingMeshPrefab == null) ? null : Instantiate(m_CeilingMeshPrefab, parent);
+        meshFilters[(int)ARMeshClassification.Table] = (m_TableMeshPrefab == null) ? null : Instantiate(m_TableMeshPrefab, parent);
+        meshFilters[(int)ARMeshClassification.Seat] = (m_SeatMeshPrefab == null) ? null : Instantiate(m_SeatMeshPrefab, parent);
+        meshFilters[(int)ARMeshClassification.Window] = (m_WindowMeshPrefab == null) ? null : Instantiate(m_WindowMeshPrefab, parent);
+        meshFilters[(int)ARMeshClassification.Door] = (m_DoorMeshPrefab == null) ? null : Instantiate(m_DoorMeshPrefab, parent);
+
+        m_MeshFrackingMap[meshId] = meshFilters;
+
+        var baseMesh = meshFilter.sharedMesh;
+        for (int i = 0; i < k_NumClassifications; ++i)
+        {
+            var classifiedMeshFilter = meshFilters[i];
+            if (classifiedMeshFilter != null)
             {
-                if (faceClassifications.Length <= 0)
+                var classifiedMesh = classifiedMeshFilter.mesh;
+                ExtractClassifiedMesh(baseMesh, faceClassifications, (ARMeshClassification)i, classifiedMesh);
+                meshFilters[i].mesh = classifiedMesh;
+
+                MeshRenderer renderer = classifiedMeshFilter.GetComponent<MeshRenderer>();
+
+                if ((ARMeshClassification)i == ARMeshClassification.Seat)
                 {
-                    return;
-                }
-
-                var parent = meshFilter.transform.parent;
-
-                MeshFilter[] meshFilters = new MeshFilter[k_NumClassifications];
-
-                meshFilters[(int)ARMeshClassification.None] = (m_NoneMeshPrefab == null) ? null : Instantiate(m_NoneMeshPrefab, parent);
-                meshFilters[(int)ARMeshClassification.Wall] = (m_WallMeshPrefab == null) ? null : Instantiate(m_WallMeshPrefab, parent);
-                meshFilters[(int)ARMeshClassification.Floor] = (m_FloorMeshPrefab == null) ? null : Instantiate(m_FloorMeshPrefab, parent);
-                meshFilters[(int)ARMeshClassification.Ceiling] = (m_CeilingMeshPrefab == null) ? null : Instantiate(m_CeilingMeshPrefab, parent);
-                meshFilters[(int)ARMeshClassification.Table] = (m_TableMeshPrefab == null) ? null : Instantiate(m_TableMeshPrefab, parent);
-                meshFilters[(int)ARMeshClassification.Seat] = (m_SeatMeshPrefab == null) ? null : Instantiate(m_SeatMeshPrefab, parent);
-                meshFilters[(int)ARMeshClassification.Window] = (m_WindowMeshPrefab == null) ? null : Instantiate(m_WindowMeshPrefab, parent);
-                meshFilters[(int)ARMeshClassification.Door] = (m_DoorMeshPrefab == null) ? null : Instantiate(m_DoorMeshPrefab, parent);
-
-                m_MeshFrackingMap[meshId] = meshFilters;
-
-                var baseMesh = meshFilter.sharedMesh;
-                for (int i = 0; i < k_NumClassifications; ++i)
-                {
-                    var classifiedMeshFilter = meshFilters[i];
-                    if (classifiedMeshFilter != null)
+                    // Appliquer une texture à la chaise détectée
+                    if (m_SeatTexture != null && renderer != null)
                     {
-                        var classifiedMesh = classifiedMeshFilter.mesh;
-                        ExtractClassifiedMesh(baseMesh, faceClassifications, (ARMeshClassification)i, classifiedMesh);
-                        meshFilters[i].mesh = classifiedMesh;
+                        Material seatMaterial = new Material(Shader.Find("Standard"));
+                        seatMaterial.mainTexture = m_SeatTexture;
+                        renderer.material = seatMaterial;
+                        renderers.Add(renderer);
+                    }
+                }
+                else
+                {
+                    // Désactiver le renderer des autres éléments
+                    if (renderer != null)
+                    {
+                        renderer.enabled = false;
                     }
                 }
             }
         }
+    }
+}
+
+
 
         /// <summary>
         /// Update the submeshes corresponding to the single mesh with multiple face classifications into submeshes.
