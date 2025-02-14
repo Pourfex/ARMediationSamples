@@ -221,6 +221,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/NianticARDK/Samples/WPS/Scenes/CompassScene.unity
     guid: f036d5120f667497d9097f9e60b22d7f
+  - enabled: 1
+    path: Assets/ARMediation/Scenes/AROcclusion/ETAOcclusion.unity
+    guid: 928e059aee4434d81b65b64de761a379
   m_configObjects:
     Niantic.Lightship.AR.LightshipSettings: {fileID: 11400000, guid: f74b0184500b149ce8683576d6fb6dcc,
       type: 2}
