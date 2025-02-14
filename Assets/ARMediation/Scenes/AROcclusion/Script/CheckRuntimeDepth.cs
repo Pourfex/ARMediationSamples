@@ -1,0 +1,45 @@
+using System;
+using System.Text;
+using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
+
+public class CheckRuntimeDepth : MonoBehaviour
+{
+    [SerializeField]
+    [Tooltip("The AROcclusionManager which will manage depth functionality.")]
+    AROcclusionManager m_OcclusionManager;
+
+    /// <summary>
+    /// Get or set the <c>AROcclusionManager</c>.
+    /// </summary>
+    public AROcclusionManager occlusionManager
+    {
+        get => m_OcclusionManager;
+        set => m_OcclusionManager = value;
+    }
+
+    [SerializeField]
+    Text m_DepthAvailabilityInfo;
+
+    /// <summary>
+    /// The UI Text used to display information about the availability of depth functionality.
+    /// </summary>
+    public Text depthAvailabilityInfo
+    {
+        get => m_DepthAvailabilityInfo;
+        set => m_DepthAvailabilityInfo = value;
+    }
+
+    void Update()
+    {
+        XROcclusionSubsystemDescriptor descriptor = m_OcclusionManager.descriptor;
+        m_DepthAvailabilityInfo.enabled =
+            descriptor == null ||
+            (descriptor.humanSegmentationStencilImageSupported == Supported.Unsupported &&
+            descriptor.humanSegmentationDepthImageSupported == Supported.Unsupported &&
+            descriptor.environmentDepthImageSupported == Supported.Unsupported);
+    }
+}
